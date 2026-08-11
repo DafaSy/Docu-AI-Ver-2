@@ -1,0 +1,70 @@
+---
+description: DocuAI project standards — stack, conventions, security, and workflow
+alwaysApply: true
+---
+
+# DocuAI
+
+AI document workspace: upload TXT/PDF/CSV, chat over documents, community posts, and admin dashboard.
+
+## Stack
+
+- **Frontend:** React 18, TypeScript 5, Vite 5, React Router 7
+- **UI:** Tailwind CSS 3, PostCSS, lucide-react, GSAP; dark-first theme via `data-theme` on `:root`
+- **Backend:** Supabase (Auth, Postgres + RLS migrations, Storage, Edge Functions on Deno)
+- **Edge Functions:** `n8n-proxy`, `admin-bootstrap`, `reset-password` in `supabase/functions/`
+- **Integrations:** n8n webhooks proxied through `n8n-proxy`
+- **Tooling:** ESLint 9 (typescript-eslint, react-hooks), Playwright export script
+
+## TypeScript & React
+
+- Functional components only; use named exports (`export function Dropzone`).
+- Prefer `type` imports for types (`import type { DocumentRecord } from '../types'`).
+- Colocate domain logic in `src/lib/`; keep components focused on UI and orchestration.
+- Use hooks (`useCallback`, `useMemo`, `useEffect`) for handlers and derived state.
+- Shared types live in `src/types.ts`; Supabase client is initialized once in `src/lib/supabase.ts`.
+- Access client env via `import.meta.env.VITE_*` only — never hardcode URLs or keys.
+
+## Naming & layout
+
+| Location | Convention | Example |
+|----------|------------|---------|
+| `src/components/` | PascalCase | `ChatPanel.tsx`, `DocumentLibrary.tsx` |
+| `src/pages/` | PascalCase + `Page` suffix | `HomePage.tsx`, `AdminPage.tsx` |
+| `src/lib/` | camelCase modules | `documents.ts`, `upload.ts` |
+| Root context | PascalCase | `AuthContext.tsx` |
+
+## Tailwind & responsive UI
+
+- Use project tokens: `ink-*`, `brand-*`, `accent-*`, `success-*`, `warning-*`, `danger-*`.
+- Reuse component classes from `src/index.css` (`glass`, `admin-input`, `theme-inverse`) before adding one-offs.
+- Mobile-first breakpoints: base layout first, then `sm:`, `md:`, `lg:` for spacing, typography, and grids.
+- Respect light/dark themes — test both `data-theme='light'` and default dark.
+- Icons from `lucide-react`; use semantic HTML and accessible labels on interactive elements.
+
+## Supabase & env security
+
+- **Client (`.env`, `VITE_` prefix):** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_N8N_WEBHOOK_MODE`
+- **Edge Function secrets (server-only):** `N8N_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_USER_ID` — set via `supabase secrets set`; documented in `supabase/functions/.env.example`
+- Supabase-injected Edge vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) must never appear in frontend code
+- Keep `.env.example` trackable; never commit `.env` or `.env.*`
+- Database changes go in `supabase/migrations/`; deploy functions from `supabase/functions/`
+
+## Secrets policy
+
+Never print, paste, commit, or return API keys, tokens, passwords, or `.env` contents. Redact secrets in errors and debug output.
+
+## Verification
+
+After meaningful code changes, run:
+
+```bash
+npm run lint
+npm run build
+```
+
+Fix all errors before finishing. Use `npm run typecheck` when changing types or interfaces.
+
+## Commits
+
+Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, etc. Subject line ≤ 72 chars; describe the *why* in the body when non-obvious.
