@@ -132,25 +132,6 @@ export function HomePage() {
 
   return (
     <main className="docuai-header-palette min-h-screen overflow-x-hidden text-ink-100">
-
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link to="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-violet-500">
-            <Workflow size={18} />
-          </span>
-          <span className="font-semibold text-white">DocuAI</span>
-        </Link>
-        <nav className="hidden gap-6 text-sm text-ink-400 sm:flex">
-          <Link to="/app" className="hover:text-white">Workspace</Link>
-          <Link to="/pricing" className="hover:text-white">Pricing</Link>
-          <Link to="/about" className="hover:text-white">About</Link>
-        </nav>
-        <div className="flex gap-3">
-          <Link to="/login" className="py-2 text-sm text-ink-300">Sign in</Link>
-          <button onClick={start} className="rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-ink-950">Try now</button>
-        </div>
-      </header>
-
       <section data-export-section="hero" className="mx-auto max-w-6xl px-5 pb-20 pt-16 text-center sm:px-8 sm:pt-24">
         <p className="inline-flex items-center gap-2 rounded-full border border-brand-400/20 bg-brand-500/10 px-3 py-1 text-xs text-brand-200">
           <Sparkles size={13} /> Your private AI document workspace

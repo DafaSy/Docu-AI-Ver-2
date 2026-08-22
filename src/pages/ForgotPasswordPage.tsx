@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Workflow, Loader2, Mail, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Loader2, Mail, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { DocuAIBrand } from '../components/DocuAIBrand';
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -35,14 +36,8 @@ export function ForgotPasswordPage() {
       </div>
 
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-12 sm:px-8">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 shadow-lift">
-            <Workflow size={20} className="text-white" strokeWidth={2.2} />
-          </div>
-          <div>
-            <p className="text-sm font-semibold leading-tight text-white">FlowUpload</p>
-            <p className="text-xs text-ink-400">Private document intelligence</p>
-          </div>
+        <Link to="/" className="inline-flex">
+          <DocuAIBrand subtitle="Private document intelligence" />
         </Link>
 
         <div className="mt-10 glass rounded-2xl border border-white/10 p-6 shadow-soft sm:p-8">

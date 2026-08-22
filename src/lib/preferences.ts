@@ -46,10 +46,24 @@ export function storePreferences(preferences: WorkspacePreferences) {
   window.dispatchEvent(new CustomEvent('docuai:preferences-changed', { detail: preferences }));
 }
 
-export function applyStoredTheme() {
-  if (typeof document === 'undefined') return 'dark' as const;
+export function applyThemeToElement(resolved: 'dark' | 'light') {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.dataset.theme = resolved;
+  root.style.colorScheme = resolved;
+  if (resolved === 'dark') {
+    root.classList.add('dark');
+    root.classList.remove('light');
+  } else {
+    root.classList.add('light');
+    root.classList.remove('dark');
+  }
+}
+
+export function applyStoredTheme(): 'dark' | 'light' {
+  if (typeof document === 'undefined') return 'dark';
   const resolved = resolveTheme(readStoredPreferences()?.theme ?? DEFAULT_PREFERENCES.theme);
-  document.documentElement.dataset.theme = resolved;
+  applyThemeToElement(resolved);
   return resolved;
 }
 

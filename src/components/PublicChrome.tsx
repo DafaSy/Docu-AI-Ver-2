@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { CreatorSocialLinks, DocuAIBrand } from './DocuAIBrand';
 import { AccountMenu } from './AccountMenu';
-import { DEFAULT_PREFERENCES, readStoredPreferences, resolveTheme, storePreferences } from '../lib/preferences';
+import { DEFAULT_PREFERENCES, applyThemeToElement, readStoredPreferences, resolveTheme, storePreferences } from '../lib/preferences';
 
 export function PublicHeader() {
   const { user, signOut, isAdmin } = useAuth();
@@ -158,7 +158,7 @@ function ThemeToggle({ mobile = false }: { mobile?: boolean }) {
     const next = theme === 'dark' ? 'light' : 'dark';
     const stored = readStoredPreferences() ?? DEFAULT_PREFERENCES;
     storePreferences({ ...stored, theme: next });
-    document.documentElement.dataset.theme = next;
+    applyThemeToElement(next);
     setTheme(next);
   };
 
