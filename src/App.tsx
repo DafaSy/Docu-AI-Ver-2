@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
@@ -6,11 +6,8 @@ import {
   LogOut,
   Settings,
   MessageSquare,
-  Languages,
   Library,
-  MoonStar,
   Search,
-  SunMedium,
   UploadCloud,
   type LucideIcon,
 } from 'lucide-react';
@@ -25,25 +22,14 @@ import { DocumentDetailModal } from './components/DocumentDetailModal';
 import { WorkspaceDashboard } from './components/WorkspaceDashboard';
 import { UploadSection } from './components/UploadSection';
 import { WorkspaceCommandPalette } from './components/WorkspaceCommandPalette';
+import { WorkspaceSettingsModal } from './components/WorkspaceSettingsModal';
 import { CreatorSocialLinks, DocuAIBrand } from './components/DocuAIBrand';
 import { useAuth } from './AuthContext';
 import { useWorkspaceDocuments } from './hooks/useWorkspaceDocuments';
 import { useWorkspaceUploads } from './hooks/useWorkspaceUploads';
+import { useWorkspacePreferences } from './hooks/useWorkspacePreferences';
 import type { ToastMessage } from './types';
 import { generateId } from './lib/format';
-import { getWorkspaceCopy } from './locales/workspace';
-import {
-  DEFAULT_PREFERENCES,
-  applyThemeToElement,
-  loadPreferences,
-  readStoredPreferences,
-  resolveTheme,
-  savePreferences,
-  storePreferences,
-  type WorkspaceLanguage,
-  type WorkspacePreferences,
-  type WorkspaceTheme,
-} from './lib/preferences';
 
 function App() {
   const { user, loading, signOut, isAdmin } = useAuth();
@@ -52,8 +38,6 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
-  const [preferences, setPreferences] = useState<WorkspacePreferences>(() => readStoredPreferences() ?? DEFAULT_PREFERENCES);
-  const [preferencesReady, setPreferencesReady] = useState(false);
 
   const uploadSectionRef = useRef<HTMLElement>(null);
   const librarySectionRef = useRef<HTMLElement>(null);
@@ -66,6 +50,15 @@ function App() {
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  // Hook for unified preferences & theme state
+  const {
+    preferences,
+    copy,
+    updateTheme,
+    updateLanguage,
+    updateDensity,
+  } = useWorkspacePreferences(user);
 
   // Hook for documents state and actions
   const {
@@ -121,44 +114,10 @@ function App() {
     return () => window.removeEventListener('keydown', handleCommandShortcut);
   }, []);
 
-  const copy = useMemo(() => getWorkspaceCopy(preferences.language), [preferences.language]);
-  const appliedTheme = useMemo(() => resolveTheme(preferences.theme), [preferences.theme]);
-
   const handleSignOut = useCallback(async () => {
     await signOut();
     navigate('/login');
   }, [signOut, navigate]);
-
-  useEffect(() => {
-    applyThemeToElement(appliedTheme);
-  }, [appliedTheme]);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    void loadPreferences(user.id)
-      .then((saved) => {
-        if (cancelled) return;
-        if (saved) {
-          setPreferences(saved);
-          storePreferences(saved);
-        }
-      })
-      .catch(() => {
-        const stored = readStoredPreferences();
-        if (stored && !cancelled) setPreferences(stored);
-      })
-      .finally(() => {
-        if (!cancelled) setPreferencesReady(true);
-      });
-    return () => { cancelled = true; };
-  }, [user]);
-
-  useEffect(() => {
-    if (!preferencesReady || !user) return;
-    storePreferences(preferences);
-    void savePreferences(user.id, preferences).catch(() => undefined);
-  }, [preferences, preferencesReady, user]);
 
   useEffect(() => {
     const handleJumpToUpload = () => {
@@ -393,18 +352,15 @@ function App() {
 
       {settingsOpen && (
         <WorkspaceSettingsModal
-          title={copy.settingsTitle}
-          theme={preferences.theme}
-          language={preferences.language}
-          themeDarkLabel={copy.themeDark}
-          themeLightLabel={copy.themeLight}
-          themeSystemLabel={copy.themeSystem}
-          languageIdLabel={copy.languageId}
-          languageEnLabel={copy.languageEn}
-          saveHint={copy.settingsSaveHint}
+          user={user}
+          isAdmin={isAdmin}
+          preferences={preferences}
+          copy={copy}
           onClose={() => setSettingsOpen(false)}
-          onThemeChange={(theme) => setPreferences((prev) => ({ ...prev, theme }))}
-          onLanguageChange={(language) => setPreferences((prev) => ({ ...prev, language }))}
+          onThemeChange={updateTheme}
+          onLanguageChange={updateLanguage}
+          onDensityChange={updateDensity}
+          onSignOut={handleSignOut}
         />
       )}
 
@@ -462,105 +418,6 @@ function getWorkspaceGreeting() {
   if (hour < 11) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
-}
-
-function WorkspaceSettingsModal({
-  title,
-  theme,
-  language,
-  themeDarkLabel,
-  themeLightLabel,
-  themeSystemLabel,
-  languageIdLabel,
-  languageEnLabel,
-  saveHint,
-  onClose,
-  onThemeChange,
-  onLanguageChange,
-}: {
-  title: string;
-  theme: WorkspaceTheme;
-  language: WorkspaceLanguage;
-  themeDarkLabel: string;
-  themeLightLabel: string;
-  themeSystemLabel: string;
-  languageIdLabel: string;
-  languageEnLabel: string;
-  saveHint: string;
-  onClose: () => void;
-  onThemeChange: (theme: WorkspaceTheme) => void;
-  onLanguageChange: (language: WorkspaceLanguage) => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[60] flex items-end bg-black/70 p-0 sm:items-center sm:justify-center sm:p-4">
-      <div className="glass w-full max-w-lg rounded-t-2xl border border-ink-200 dark:border-white/15 p-5 shadow-2xl sm:rounded-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className="text-base font-semibold text-ink-950 dark:text-white">{title}</h3>
-            <p className="mt-1 text-xs text-ink-600 dark:text-ink-500">{saveHint}</p>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-ink-500 dark:text-ink-400 hover:bg-ink-200/30 dark:hover:bg-white/5 hover:text-ink-950 dark:hover:text-white" aria-label="Close settings">
-            <Settings size={17} />
-          </button>
-        </div>
-        <div className="mt-5 space-y-5">
-          <PreferenceGroup label="Theme" icon={theme === 'light' ? SunMedium : MoonStar}>
-            <div className="grid grid-cols-3 gap-2">
-              {(['dark', 'light', 'system'] as WorkspaceTheme[]).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => onThemeChange(option)}
-                  className={`rounded-xl border px-3 py-2 text-sm transition ${
-                    theme === option
-                      ? 'border-brand-500/50 bg-brand-500/15 text-ink-950 dark:text-white'
-                      : 'border-ink-200 dark:border-white/10 bg-ink-200/30 dark:bg-white/5 text-ink-800 dark:text-ink-300 hover:text-ink-950 dark:hover:text-white'
-                  }`}
-                >
-                  {option === 'dark' ? themeDarkLabel : option === 'light' ? themeLightLabel : themeSystemLabel}
-                </button>
-              ))}
-            </div>
-          </PreferenceGroup>
-          <PreferenceGroup label="Language" icon={Languages}>
-            <div className="grid grid-cols-2 gap-2">
-              {([{ value: 'id', label: languageIdLabel }, { value: 'en', label: languageEnLabel }] as const).map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => onLanguageChange(option.value)}
-                  className={`rounded-xl border px-3 py-2 text-sm transition ${
-                    language === option.value
-                      ? 'border-brand-500/50 bg-brand-500/15 text-ink-950 dark:text-white'
-                      : 'border-ink-200 dark:border-white/10 bg-ink-200/30 dark:bg-white/5 text-ink-800 dark:text-ink-300 hover:text-ink-950 dark:hover:text-white'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </PreferenceGroup>
-        </div>
-        <div className="mt-6 flex justify-end">
-          <button onClick={onClose} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400">
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PreferenceGroup({ label, icon: Icon, children }: { label: string; icon: typeof MoonStar; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-700 dark:text-ink-300">
-        <Icon size={14} className="text-brand-500 dark:text-brand-300" />
-        {label}
-      </div>
-      {children}
-    </div>
-  );
 }
 
 function FooterColumn({ title, links }: { title: string; links: [string, string][] }) {

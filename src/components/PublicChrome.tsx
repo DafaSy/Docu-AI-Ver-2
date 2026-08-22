@@ -149,9 +149,13 @@ function ThemeToggle({ mobile = false }: { mobile?: boolean }) {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => resolveTheme(readStoredPreferences()?.theme ?? DEFAULT_PREFERENCES.theme));
 
   useEffect(() => {
-    const sync = () => setTheme(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
+    const sync = () => setTheme(resolveTheme(readStoredPreferences()?.theme ?? DEFAULT_PREFERENCES.theme));
     window.addEventListener('docuai:preferences-changed', sync);
-    return () => window.removeEventListener('docuai:preferences-changed', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('docuai:preferences-changed', sync);
+      window.removeEventListener('storage', sync);
+    };
   }, []);
 
   const toggle = () => {
