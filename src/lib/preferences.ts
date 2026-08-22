@@ -2,10 +2,12 @@ import { supabase } from './supabase';
 
 export type WorkspaceTheme = 'dark' | 'light' | 'system';
 export type WorkspaceLanguage = 'id' | 'en';
+export type WorkspaceDensity = 'comfortable' | 'compact';
 
 export interface WorkspacePreferences {
   theme: WorkspaceTheme;
   language: WorkspaceLanguage;
+  density: WorkspaceDensity;
 }
 
 const STORAGE_KEY = 'docuai.workspace.preferences';
@@ -13,6 +15,7 @@ const STORAGE_KEY = 'docuai.workspace.preferences';
 export const DEFAULT_PREFERENCES: WorkspacePreferences = {
   theme: 'dark',
   language: 'id',
+  density: 'comfortable',
 };
 
 export function resolveTheme(theme: WorkspaceTheme): 'dark' | 'light' {
@@ -32,7 +35,11 @@ export function readStoredPreferences(): WorkspacePreferences | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<WorkspacePreferences>;
     if ((parsed.theme === 'dark' || parsed.theme === 'light' || parsed.theme === 'system') && (parsed.language === 'id' || parsed.language === 'en')) {
-      return { theme: parsed.theme, language: parsed.language };
+      return {
+        theme: parsed.theme,
+        language: parsed.language,
+        density: parsed.density === 'compact' ? 'compact' : 'comfortable',
+      };
     }
   } catch {
     return null;
@@ -79,6 +86,7 @@ export async function loadPreferences(userId: string): Promise<WorkspacePreferen
   return {
     theme: (data.theme as WorkspaceTheme) ?? DEFAULT_PREFERENCES.theme,
     language: (data.language as WorkspaceLanguage) ?? DEFAULT_PREFERENCES.language,
+    density: readStoredPreferences()?.density ?? DEFAULT_PREFERENCES.density,
   };
 }
 
